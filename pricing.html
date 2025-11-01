@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PurpleDrop — Pricing App + Postal Map (Offline)</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+<!--service are map-->
+  <link rel="stylesheet" href="css/service-map.css" crossorigin=""/>
+   <style>
+    :root{--purple:#7A2BE6;--purple-dark:#4B0082;--purple-light:#E9D7FF;--ink:#212429;--muted:#6B7280;--card:#fff;--ring:rgba(122,43,230,.35)}
+    *{box-sizing:border-box} html{scroll-behavior:smooth}
+    body{margin:0;font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;color:var(--ink);
+      background:#F2E9FF;
+      background-image:linear-gradient(180deg,#F4EEFF 0%,#E8DAFF 100%),
+        radial-gradient(90px 90px at 15% 20%, rgba(122,43,230,.12) 0 40%, transparent 41%),
+        radial-gradient(120px 120px at 35% 75%, rgba(122,43,230,.11) 0 40%, transparent 41%);
+      background-attachment:fixed; background-repeat:no-repeat}
+    .container{max-width:1100px;margin:0 auto;padding:0 20px}
+    header{position:sticky;top:0;background:#fff;border-bottom:1px solid #eee; z-index:1001;}
+    .nav{display:flex;align-items:center;gap:18px;padding:12px 0}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--purple-dark)}
+    .brand img{height:100px;width:auto}
+    .spacer{flex:1}
+    a{color:var(--purple);text-decoration:none}
+    .btn{display:inline-block;background:var(--purple);color:#fff;padding:.6rem 1rem;border-radius:999px;font-weight:700}
+    section{padding:36px 0}
+    .card{background:#fff;border:1px solid #eee;border-radius:16px;padding:20px;box-shadow:0 4px 18px rgba(0,0,0,.05)}
+    .map-banner{margin:8px 0 10px 0;font-weight:800;text-align:center;font-size:18px;color:var(--purple)}
+    .pc-widget{display:grid;gap:10px}
+    .pc-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .pc-row input{flex:1;min-width:220px;padding:10px;border:1px solid #ddd;border-radius:12px}
+    .pc-row button{padding:.6rem 1rem;border:0;border-radius:999px;background:var(--purple);color:#fff;font-weight:700;cursor:pointer}
+    .pc-result{font-weight:800;margin-top:8px}.pc-ok{color:#067a00}.pc-no{color:#b00020}.pc-distance{font-size:12px;color:#555}
+    .map-container{height:420px;border-radius:12px;overflow:hidden;margin:12px 0}
+    .map-note{font-size:13px;color:#666;text-align:center;margin-top:8px}
+  </style>
+<script src="js/service-map-header.js"></script>
+<!--service are map-->
+<style>
+  :root{ --purple:#6f3df4; --purple-dark:#4b1bb3; --ink:#222; --muted:#6b6b6b; }
+  body{margin:0;background:linear-gradient(180deg,#efe7ff,#fafafa);color:var(--ink);
+       font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,"Noto Sans",sans-serif}
+  header{padding:20px 16px 8px;text-align:center;}
+  .brand{font-weight:800;font-size:28px;color:var(--purple-dark)}
+  .brandrow{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:nowrap}
+  .logo{height:32px;aspect-ratio:auto}
+
+  main{max-width:1100px;margin:0 auto;padding:16px}
+  .bar{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:end;margin:12px 0 16px}
+  .group{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}
+  select,input[type="number"],input[type="text"],input[type="email"],input[type="tel"]{
+    padding:10px 12px;border:1px solid #e5e1ff;border-radius:10px;background:#fff;min-width:120px
+  }
+  select{min-width:160px}
+  button{border:0;border-radius:12px;padding:10px 14px;background:var(--purple);color:#fff;font-weight:700;cursor:pointer}
+  button.secondary{background:#fff;color:var(--purple);border:1px solid #e5e1ff}
+  .cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+  @media (max-width:900px){ .cards{grid-template-columns:1fr} }
+  .card{background:#fff;border:1px solid #eee8ff;border-radius:16px;padding:16px;box-shadow:0 10px 24px rgba(0,0,0,.05)}
+  .grid{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  .grid th,.grid td{padding:10px 8px;border-bottom:1px solid #efeaff;text-align:right}
+  .grid th:first-child,.grid td:first-child{text-align:left}
+  .grid thead th{font-size:12px;color:#6f63a7;text-transform:uppercase;letter-spacing:.06em}
+  .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#f0eaff;color:#4b1bb3;font-weight:600;font-size:12px}
+  .tiny{font-size:12px;color:#6b6b6b}
+  .hr{height:1px;background:#eee8ff;margin:8px 0 16px}
+  #customer-card:has(:invalid){ box-shadow:0 0 0 2px rgba(239,68,68,.2) inset }
+  #mapWrap{display:grid;grid-template-columns:1fr 320px;gap:12px;align-items:center;margin:-8px 0 16px}
+  @media (max-width:900px){ #mapWrap{grid-template-columns:1fr} }
+  #distanceStatus{margin:0; font-size:14px}
+  #distanceStatus.ok{color:#2f855a}
+  #distanceStatus.out{color:#b83280;font-weight:700}
+  #contactMsg{display:none;margin:4px 0 0;font-weight:700;color:#b83280}
+  #contactMsg.show{display:block}
+</style>
+<style>
+/* --- DEMO footer note styles (auto-injected) --- */
+#demoFooterNote{display:none; font-weight:700; text-align:center; margin-top:12px; line-height:1.25;}
+#demoFooterNote .line{display:block;}
+/* Ensure it prints at the very bottom on print/PDF */
+@media print{
+  #demoFooterNote{display:block !important; position:fixed; left:0; right:0; bottom:24px; font-size:14pt;}
+}
+</style>
+<style>
+/* --- Stage footer note styles (auto-injected v2) --- */
+#demoFooterNote{display:none; font-weight:700; text-align:center; margin-top:12px; line-height:1.25;}
+#demoFooterNote .line{display:block;}
+@media print{
+  #demoFooterNote{display:block !important; position:fixed; left:0; right:0; bottom:24px; font-size:14pt;}
+}
+</style>
+<style>
+/* --- Stage footer note styles (auto-injected v3) --- */
+#demoFooterNote{
+  display:none;
+  font-weight:700;
+  text-align:center;
+  margin-top:16px;
+  padding-top:8px;
+  line-height:1.35;
+  word-break:break-word;
+  white-space:normal;
+  overflow:visible !important;
+  border-top:1px solid rgba(0,0,0,0.15);
+}
+#demoFooterNote .line{display:block; margin:2px 0;}
+/* Try to keep it inside the quote container on-screen */
+#quotePreview #demoFooterNote, .quote-preview #demoFooterNote,
+#invoicePreview #demoFooterNote, .invoice-preview #demoFooterNote{
+  position:static !important;
+}
+@media print{
+  /* For print/PDF, force it to the bottom with high z-index */
+  #demoFooterNote{
+    display:block !important;
+    position:fixed !important;
+    left:0; right:0; bottom:24px;
+    font-size:14pt;
+    background:transparent;
+    border-top:none;
+    z-index:2147483647;
+  }
+}
+</style>
+<style>
+/* --- App theming: light purple background + clearer fields (v4) --- */
+:root{
+  --purple-light:#F0E6FF;
+  --purple-mid:#E6CCFF;
+  --purple-dark:#4B0082;
+  --accent:#8A2BE2;
+  --text:#333;
+  --white:#fff;
+}
+body{
+  background:var(--purple-light) !important;
+  color:var(--text);
+}
+/* Cards/sections white for contrast */
+.section, .card, .panel, .container, .quote-preview, #quotePreview, #invoicePreview{
+  background:var(--white) !important;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.06);
+  padding:12px;
+}
+/* Inputs more visible */
+input[type="text"], input[type="number"], input[type="email"], select, textarea{
+  background:#fff !important;
+  border:2px solid var(--accent) !important;
+  border-radius:8px !important;
+  padding:8px 10px !important;
+  outline:none;
+}
+input:focus, select:focus, textarea:focus{
+  box-shadow:0 0 0 3px rgba(138,43,226,0.15);
+}
+/* Keep PDFs clean if needed */
+@media print{
+  body{ background:#fff !important; }
+}
+</style>
+<style>
+/* --- Stage footer note styles: stronger PDF reliability (v4) --- */
+#demoFooterNote{
+  display:none;
+  font-weight:700;
+  text-align:center;
+  margin-top:16px;
+  padding-top:8px;
+  line-height:1.38;
+  word-break:break-word;
+  white-space:normal;
+  overflow:visible !important;
+  border-top:1px solid rgba(0,0,0,0.15);
+}
+#demoFooterNote .line{display:block; margin:2px 0;}
+/* Keep inside quote area on-screen */
+#quotePreview #demoFooterNote, .quote-preview #demoFooterNote,
+#invoicePreview #demoFooterNote, .invoice-preview #demoFooterNote{
+  position:static !important;
+}
+@media print{
+  @page{ margin-bottom: 70px; } /* ensure space at bottom */
+  #demoFooterNote{
+    display:block !important;
+    position:fixed !important;
+    left:0; right:0; bottom:40px; /* more clearance to avoid clipping */
+    font-size:14pt;
+    background:transparent;
+    border-top:none;
+    z-index:2147483647;
+  }
+}
+</style>
+<style>
+/* --- PDF bottom spacing for possible 3-line FIRST ORDER footer --- */
+@media print{
+  @page{ margin-bottom: 90px; }
+  #demoFooterNote{ bottom: 48px !important; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brandrow">
+    <img src="Logo transparent.svg" alt="PurpleDrop logo" class="logo">
+    <div class="brand">PurpleDrop — Liquid Business Card™</div>
+  </div>
+  <div class="tiny">Offline Pricing & Quote App</div>
+</header>
+
+<main>
+  <!-- Customer Info -->
+  <section class="card" id="customer-card" style="margin-bottom:16px">
+    <h3 style="margin-top:0">Customer Info</h3>
+    <p class="tiny">Fields marked with <b>*</b> are mandatory.</p>
+    <form id="customer-form">
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+        <fieldset style="border:1px dashed #e5e1ff;border-radius:12px;padding:12px">
+          <legend class="pill">Mandatory</legend>
+          <label>Business Name *</label>
+          <input id="biz_name" type="text" required placeholder="Company Inc.">
+          <label>Address *</label>
+          <input id="biz_addr" type="text" required placeholder="123 Main St, City, Province">
+          <label>Postal Code *</label>
+          <input id="biz_postal" type="text" required pattern="^[A-Za-z]\d[A-Za-z]\s?\d[A-Za-z]\d$" placeholder="L4G 6J6">
+          <label>Website *</label>
+          <input id="biz_web" inputmode="url" required pattern="^([a-zA-Z]+://)?([A-Za-z0-9.-]+\.[A-Za-z]{2,})(/.*)?$" placeholder="example.com">
+          <label>Contact Email *</label>
+          <input id="biz_email" type="email" required placeholder="name@example.com">
+          <label>Phone Number *</label>
+          <input id="biz_phone" type="tel" required pattern="^[0-9+()\-\s]{7,}$" placeholder="416-966-6333">
+        </fieldset>
+        <fieldset style="border:1px dashed #e5e1ff;border-radius:12px;padding:12px">
+          <legend class="pill">Optional</legend>
+          <label>Contact Name</label>
+          <input id="contact_name" type="text" placeholder="First Last">
+          <label>Number of Employees</label>
+          <input id="num_employees" type="number" min="1" step="1" placeholder="e.g., 25">
+          <label>Year Established</label>
+          <input id="year_established" type="number" min="1800" max="2100" step="1" placeholder="e.g., 2018">
+        </fieldset>
+      </div>
+    </form>
+  </section>
+
+  <!-- Map + distance -->
+  <section class="card" style="margin-top:-8px;margin-bottom:16px">
+    <h3 style="margin-top:0">Delivery Radius</h3>
+    <div id="mapWrap">
+      <canvas id="map" width="640" height="360" style="width:100%;height:auto;border:1px solid #eee8ff;border-radius:12px;background:#fff"></canvas>
+      <div>
+        <p id="distanceStatus" class="tiny"></p>
+        <p id="contactMsg" class="tiny">Please contact us</p>
+        <p class="tiny" style="color:#6b6b6b;margin-top:8px">
+          This offline map uses approximate FSA (first 3 characters of postal code) centroids near Aurora, ON.
+        </p>
+      </div>
+    </div>
+  </section>
+
+   <!-- FIRST MAP: SERVICE AREA TOP -->
+  <section id="service-top">
+    <div class="container">
+      <div class="card">
+        <p class="map-banner"><strong>If you are outside of this area and want to try,<br/>Please leave a message at 416-966-3333, or <a href="mailto:info@purpledrop.ca">info@purpledrop.ca</a></strong></p>
+        <div class="pc-widget">
+          <div class="pc-row">
+            <input id="pc-input-1" placeholder="Enter postal code to confirm" autocomplete="postal-code">
+            <button id="pc-btn-1" type="button">Check Area</button>
+            <button id="pc-geo-btn-1" type="button">Use Current Location</button>
+          </div>
+          <div id="pc-result-1" class="pc-result" role="status" aria-live="polite"></div>
+        </div>
+        <div id="radiusMap1" class="map-container"></div>
+        <p class="map-note">Map: 25 km radius around M5H 2N2 (Downtown Toronto, ON).</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="bar">
+      <div class="group">
+        <div>
+          <label>Stage</label>
+          <select id="stage">
+            <option value="DEMO">DEMO</option>
+            <option value="TESTING">TESTING</option>
+            <option value="FIRST_ORDER">FIRST ORDER</option>
+            <option value="REGULAR_ORDER">REGULAR ORDER</option>
+          </select>
+        </div>
+        <div>
+          <label>Quantity</label>
+          <select id="qty"></select>
+        </div>
+        <div>
+          <label>Price/Bottle (auto)</label>
+          <input id="ppb" type="number" step="0.01" value="0" readonly>
+        </div>
+        <div>
+          <label>Delivery Fee <span class="tiny" style="font-weight:600;color:#5a4bb3">(auto-calculated)</span></label>
+          <input id="delivery" type="number" min="0" step="1" value="0" readonly>
+        </div>
+      </div>
+
+      <div class="group">
+        <div>
+          <label>Label Design</label>
+          <select id="design">
+            <option value="0" selected>$0</option>
+            <option value="100">$100</option>
+          </select>
+        </div>
+        <div>
+          <label>Label Processing</label>
+          <select id="processing">
+            <option value="0" selected>$0</option>
+            <option value="50">$50</option>
+          </select>
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button id="calcBtn">Calculate</button>
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button id="resetBtn" class="secondary">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="hr"></div>
+
+    <div class="cards">
+      <div class="card">
+        <h3>Pricing Table <span id="stageTag" class="pill">DEMO</span></h3>
+        <div class="tiny" style="margin:4px 0 6px;color:#5a4bb3">Tip: click a row to send it to the quote.</div>
+        <table class="grid" id="table"></table>
+        <p class="tiny" id="stageHelp"></p>
+      </div>
+
+      <div class="card">
+        <h3>Quote Preview</h3>
+        <table class="grid" id="preview">
+          <thead><tr><th>Line</th><th>Qty</th><th>Price</th><th>Amount</th></tr></thead>
+          <tbody id="previewBody"></tbody>
+          <tfoot id="totals"></tfoot>
+        </table>
+        <p id="paymentNote" class="tiny" style="margin:8px 0 0"></p>
+        <div style="text-align:right;margin-top:10px">
+          <button onclick="validateCustomer(true) && window.print()">Print / Save PDF</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ---------- Data ---------- */
+const DATA = {
+  DEMO: [
+    {qty:6,  ppb:5.00, cost:30},
+    {qty:10, ppb:4.00, cost:40},
+  ],
+  TESTING: [
+    {qty:30,  ppb:6.00, cost:180},
+    {qty:50,  ppb:5.00, cost:250},
+    {qty:80,  ppb:4.00, cost:320},
+    {qty:100, ppb:3.50, cost:350, note:"Includes $100 label design and $50 label processing"},
+    {qty:200, ppb:2.25, cost:450},
+    {qty:300, ppb:2.15, cost:645},
+  ],
+  FIRST_ORDER: [
+    {qty:100, ppb:2.25, cost:225},
+    {qty:200, ppb:2.15, cost:430},
+    {qty:300, ppb:1.95, cost:585},
+    {qty:400, ppb:1.75, cost:700},
+    {qty:500, ppb:1.65, cost:825},
+    {qty:"525+", ppb:1.55, cost:null, note:"Enter qty ≥525; multiples of 25 recommended"}
+  ],
+  REGULAR_ORDER: [
+    {qty:100,  ppb:2.15, cost:215},
+    {qty:200,  ppb:2.05, cost:410},
+    {qty:300,  ppb:1.85, cost:555},
+    {qty:400,  ppb:1.50, cost:600},
+    {qty:500,  ppb:1.45, cost:725},
+    {qty:"1800×", ppb:1.25, cost:2250, note:"Special rate applies to multiples of 1800 only"}
+  ]
+};
+
+const HST_RATE = 0.13;
+const $ = s=>document.querySelector(s);
+const money = n => (Math.round((n+Number.EPSILON)*100)/100).toFixed(2);
+
+/* ---------- Quantity options & defaults ---------- */
+const QTY_OPTIONS = {
+  DEMO:         { options: [6, 10],                       default: 10  },
+  TESTING:      { options: [30, 50, 80, 100, 200, 300],    default: 100 },
+  FIRST_ORDER:  { options: [100, 200, 300, 400, 500, 525], default: 300 },
+  REGULAR_ORDER:{ options: [100, 200, 300, 400, 500, 1800],default: 400 }
+};
+function populateQtySelect(stage, prefer){
+  const sel = $("#qty");
+  const conf = QTY_OPTIONS[stage] || {options:[10], default:10};
+  const opts = conf.options;
+  const pick = (prefer && opts.includes(prefer)) ? prefer : conf.default;
+  sel.innerHTML = opts.map(v => `<option value="${v}" ${v===pick?"selected":""}>${v}</option>`).join("");
+}
+
+/* ---------- Delivery fees (auto) ---------- */
+function computeDelivery(stage, qty){
+  if(stage==="DEMO" || stage==="TESTING"){ return 0; }
+  if(stage==="FIRST_ORDER"){
+    if(qty > 500) return 20;
+    if(qty >= 500) return 17;
+    if(qty >= 400) return 14;
+    if(qty >= 300) return 12;
+    if(qty >= 200) return 11;
+    if(qty >= 100) return 10;
+    return 10;
+  }
+  if(stage==="REGULAR_ORDER"){
+    if(qty >= 1800) return 45;
+    if(qty >= 500) return 15;
+    if(qty >= 400) return 12;
+    if(qty >= 300) return 11;
+    if(qty >= 200) return 10;
+    if(qty >= 100) return 9;
+    return 9;
+  }
+  return 0;
+}
+
+/* ---------- Pricing Table ---------- */
+function populateTable(stage){
+  const rows = DATA[stage];
+  const t = $("#table");
+  $("#stageTag").textContent = stage.replace("_"," ");
+  t.innerHTML = `<thead><tr><th>QTY</th><th>PRICE/BOTTLE</th><th>COST</th></tr></thead><tbody>` +
+    rows.map(r => {
+      const q = r.qty;
+      const ppb = money(r.ppb);
+      const cost = (r.cost!=null)? money(r.cost) : '—';
+      const note = r.note? `<div class="tiny" style="color:#5a4bb3">${r.note}</div>` : "";
+      return `<tr><td>${q}</td><td>$${ppb}</td><td>$${cost}${note}</td></tr>`;
+    }).join("") + "</tbody>";
+  const help = {
+    DEMO: "Two options: 6-pack or 10-pack. Free delivery. Label design & processing = $0 for DEMO. Cash on Delivery; no HST.",
+    TESTING: "Best price at 100–300 bottles. At exactly 100 bottles, design & processing are INCLUDED ($0 add-ons). Free delivery.",
+    FIRST_ORDER: "Multiples of 25 recommended. Delivery fee is auto-calculated by tier.",
+    REGULAR_ORDER: "Standard repeat pricing. Delivery fee is auto-calculated by tier; $1.25/bottle for exact multiples of 1800."
+  };
+  $("#stageHelp").textContent = help[stage];
+  attachRowHandlers();
+}
+
+/* ---------- Price logic ---------- */
+function autoPrice(stage, qty){
+  qty = +qty;
+  if(!qty || qty<=0){ $("#ppb").value = 0; return; }
+  const rows = DATA[stage];
+  for(const r of rows){
+    if(typeof r.qty === "number" && r.qty === qty){ $("#ppb").value = r.ppb; return; }
+  }
+  if(stage==="FIRST_ORDER" && qty>=525){ $("#ppb").value = 1.55; return; }
+  if(stage==="REGULAR_ORDER" && qty%1800===0 && qty>=1800){ $("#ppb").value = 1.25; return; }
+  let best=null;
+  for(const r of rows){ if(typeof r.qty==="number"){ if(!best) best=r; if(r.qty<=qty && r.qty>=(best.qty||0)) best=r; } }
+  $("#ppb").value = best? best.ppb : 0;
+}
+
+/* ---------- Add-on rules ---------- */
+function toggleStageAddons(){
+  const stage = $("#stage").value;
+  const qty = +$("#qty").value;
+  const design = $("#design");
+  const processing = $("#processing");
+  if(stage==="DEMO"){
+    design.value = "0"; processing.value = "0";
+    design.setAttribute("disabled","disabled"); processing.setAttribute("disabled","disabled");
+    return;
+  }
+  if(stage==="TESTING" && qty===100){
+    design.value = "0"; processing.value = "0";
+    design.setAttribute("disabled","disabled"); processing.setAttribute("disabled","disabled");
+    return;
+  }
+  if(stage==="FIRST_ORDER" || stage==="REGULAR_ORDER"){
+    design.value = "0"; processing.value = "0";
+    design.setAttribute("disabled","disabled"); processing.setAttribute("disabled","disabled");
+    return;
+  }
+  design.removeAttribute("disabled"); processing.removeAttribute("disabled");
+  if(design.value==="0") design.value="100";
+  if(processing.value==="0") processing.value="50";
+}
+
+/* ---------- Quote Preview ---------- */
+function buildPreview(){
+  const stage = $("#stage").value;
+  const qty = +$("#qty").value;
+  const ppb = +$("#ppb").value;
+  const design = +$("#design").value;
+  const processing = +$("#processing").value;
+  const delivery = computeDelivery(stage, qty);
+  $("#delivery").value = delivery;
+
+  // Hide add-ons where included
+  let designEff = design, processingEff = processing;
+  if(stage==="DEMO" || stage==="FIRST_ORDER" || stage==="REGULAR_ORDER" || (stage==="TESTING" && qty===100)){
+    designEff = 0; processingEff = 0;
+  }
+
+  const lines = [];
+  lines.push({label: stage.replace("_"," ")+" Bottles", qty, price: ppb, amount: qty*ppb});
+  if(designEff>0) lines.push({label:"Label Design", qty:1, price:designEff, amount:designEff});
+  if(processingEff>0) lines.push({label:"Label Processing", qty:1, price:processingEff, amount:processingEff});
+  if(stage==="FIRST_ORDER" || stage==="REGULAR_ORDER"){ lines.push({label:"Delivery", qty:1, price:delivery, amount:delivery}); }
+
+  const sub = lines.reduce((s,l)=>s+l.amount,0);
+  const hst = (stage==="DEMO"?0: sub*HST_RATE);
+  const total = sub+hst;
+
+  $("#previewBody").innerHTML = lines.map(l=>`<tr><td>${l.label}</td><td>${l.qty}</td><td>$${money(l.price)}</td><td>$${money(l.amount)}</td></tr>`).join("");
+  $("#totals").innerHTML = `
+    <tr><td colspan="3"><b>Subtotal</b></td><td>$${money(sub)}</td></tr>
+    <tr><td colspan="3"><b>${stage==="DEMO" ? "HST (0%)" : "HST (13%)"}</b></td><td>$${money(hst)}</td></tr>
+    <tr><td colspan="3"><b>Total</b></td><td>$${money(total)}</td></tr>
+  `;
+
+  const pay = document.getElementById("paymentNote");
+  if(stage==="DEMO"){ pay.textContent="Payment: Cash on Delivery. HST does not apply for DEMO."; } else { pay.textContent=""; }
+}
+
+/* ---------- Row click to quote ---------- */
+function attachRowHandlers(){
+  const rows = document.querySelectorAll("#table tbody tr");
+  rows.forEach(tr => {
+    tr.style.cursor = "pointer";
+    tr.title = "Click to quote this line";
+    tr.onclick = () => {
+      const tds = tr.querySelectorAll("td");
+      const qtyText = (tds[0]?.textContent || "").trim();
+      let q = 0;
+      if (/1800/.test(qtyText)) q = 1800;
+      else if (/525/.test(qtyText)) q = 525;
+      else q = parseInt(qtyText.replace(/[^0-9]/g, "")) || 0;
+      if (q > 0) {
+        const sel = document.querySelector("#qty");
+        let exists = Array.from(sel.options).some(o => +o.value === q);
+        if(!exists){ sel.insertAdjacentHTML('beforeend', `<option value="${q}">${q}</option>`); }
+        sel.value = String(q);
+      }
+      autoPrice($("#stage").value, $("#qty").value);
+      toggleStageAddons();
+      $("#delivery").value = computeDelivery($("#stage").value, +$("#qty").value);
+      buildPreview();
+      document.querySelector("#preview").scrollIntoView({behavior:"smooth", block:"center"});
+    };
+  });
+}
+
+/* ---------- Customer form helpers ---------- */
+function ensureScheme(input){
+  const v = (input.value||'').trim();
+  if(v && !/^([a-z]+):\/\//i.test(v)){
+    input.value = 'https://' + v;
+  }
+}
+function validateCustomer(showAlert){
+  const form = document.getElementById('customer-form');
+  const web = document.getElementById('biz_web');
+  ensureScheme(web);
+  if(!form.checkValidity()){
+    if(showAlert){ alert('Please fill in all mandatory Customer Info fields.'); }
+    return false;
+  }
+  return true;
+}
+
+/* ---------- Offline postal distance vs L4G6J6 + MAP ---------- */
+const ORIGIN_POSTAL = "L4G6J6";
+const ORIGIN_LAT = 44.006;   // Aurora approx
+const ORIGIN_LON = -79.450;
+/* A small offline table of nearby FSA centroids */
+const FSA_CENTROIDS = {
+  "L4G":[44.006,-79.450], "L3Y":[44.060,-79.460], "L3X":[44.100,-79.430],
+  "L4C":[43.870,-79.440], "L4E":[43.950,-79.450], "L4J":[43.800,-79.450],
+  "L4K":[43.800,-79.530], "L6A":[43.860,-79.520], "L6B":[43.870,-79.240],
+  "L6C":[43.890,-79.330], "L6E":[43.920,-79.230], "L3P":[43.880,-79.270],
+  "L3R":[43.850,-79.340], "M2M":[43.790,-79.420], "M3J":[43.770,-79.490],
+  "M5V":[43.640,-79.390], "L1Z":[43.860,-79.000], "L1S":[43.850,-79.090],
+  "L4S":[43.940,-79.430], "L7E":[43.920,-79.740]
+};
+function haversine(lat1, lon1, lat2, lon2){
+  const R = 6371; const toRad = d => d * Math.PI/180;
+  const dLat = toRad(lat2-lat1), dLon = toRad(lon2-lon1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+function updatePostalDistance(){
+  const el = document.getElementById("biz_postal");
+  const status = document.getElementById("distanceStatus");
+  const contact = document.getElementById("contactMsg");
+  const s = (el.value||"").trim().toUpperCase().replace(/\s+/g,"");
+  status.textContent = ""; status.className = "tiny"; contact.classList.remove("show");
+
+  if(!/^[A-Z]\d[A-Z]\d[A-Z]\d$/.test(s)){ drawMap(); return; }
+  const fsa = s.slice(0,3);
+  const cen = FSA_CENTROIDS[fsa];
+  if(!cen){ status.textContent="Distance: unknown (offline FSA not in table)."; drawMap(); return; }
+
+  const d = haversine(ORIGIN_LAT, ORIGIN_LON, cen[0], cen[1]);
+  const within = d <= 30;
+  status.textContent = `Distance from ${ORIGIN_POSTAL}: ${d.toFixed(1)} km — ${within? "within" : "outside"} 30 km radius.`;
+  status.classList.add(within? "ok":"out");
+  if(!within){ contact.classList.add("show"); }
+
+  // draw map with this point
+  drawMap(cen[0], cen[1]);
+}
+
+/* --- Simple offline map (canvas) centered on origin with 30 km circle --- */
+function drawMap(markerLat, markerLon){
+  const canvas = document.getElementById("map");
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+  // background
+  ctx.fillStyle = "#ffffff"; ctx.fillRect(0,0,W,H);
+  // subtle grid
+  ctx.strokeStyle = "#f3f0ff"; ctx.lineWidth = 1;
+  for(let x=0;x<=W;x+=40){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for(let y=0;y<=H;y+=40){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+  // map scale: show ~ ±50 km around center
+  const kmSpan = 50; // half-span
+  const kmPerDegLat = 111.32;
+  const kmPerDegLon = 111.32 * Math.cos(ORIGIN_LAT*Math.PI/180);
+  const degLatSpan = kmSpan / kmPerDegLat;
+  const degLonSpan = kmSpan / kmPerDegLon;
+
+  function proj(lat, lon){
+    const x = ( (lon - ORIGIN_LON) / (2*degLonSpan) + 0.5 ) * W;
+    const y = ( 0.5 - (lat - ORIGIN_LAT) / (2*degLatSpan) ) * H;
+    return [x,y];
+  }
+
+  // center & radius (30 km)
+  const [cx, cy] = proj(ORIGIN_LAT, ORIGIN_LON);
+  const kmToPx = (W / (2*degLonSpan)) / kmPerDegLon; // approx uniform scale near center
+  const r = 30 * kmToPx;
+
+  // radius circle
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI*2);
+  ctx.fillStyle = "rgba(111,61,244,0.08)";
+  ctx.fill();
+  ctx.strokeStyle = "#6f3df4";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // center pin
+  ctx.fillStyle = "#4b1bb3";
+  ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI*2); ctx.fill();
+  ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+  ctx.fillText("Origin: L4G 6J6", cx+8, cy-8);
+
+  // marker (if provided)
+  if(typeof markerLat==="number" && typeof markerLon==="number"){
+    const [mx, my] = proj(markerLat, markerLon);
+    ctx.fillStyle = "#b83280";
+    ctx.beginPath(); ctx.arc(mx, my, 5, 0, Math.PI*2); ctx.fill();
+    ctx.fillText("Customer", mx+8, my-8);
+  }
+}
+
+/* ---------- Events ---------- */
+$("#stage").addEventListener("change", e=>{
+  const stage = e.target.value;
+  populateQtySelect(stage);
+  toggleStageAddons();
+  autoPrice(stage, $("#qty").value);
+  $("#delivery").value = computeDelivery(stage, +$("#qty").value);
+  populateTable(stage);
+  buildPreview();
+});
+$("#qty").addEventListener("change", ()=>{
+  autoPrice($("#stage").value, $("#qty").value);
+  toggleStageAddons();
+  $("#delivery").value = computeDelivery($("#stage").value, +$("#qty").value);
+  buildPreview();
+});
+document.querySelector("#calcBtn").addEventListener("click", ()=>{
+  validateCustomer(false);
+  updatePostalDistance();
+  buildPreview();
+});
+$("#resetBtn").addEventListener("click", ()=>{
+  $("#stage").value = "DEMO";
+  populateQtySelect("DEMO");
+  toggleStageAddons();
+  autoPrice("DEMO", $("#qty").value);
+  $("#delivery").value = computeDelivery("DEMO", +$("#qty").value);
+  populateTable("DEMO");
+  document.getElementById("customer-form").reset();
+  document.getElementById("distanceStatus").textContent="";
+  document.getElementById("contactMsg").classList.remove("show");
+  drawMap(); // reset map
+  buildPreview();
+});
+document.addEventListener('input', (e)=>{ if(e.target && e.target.id==='biz_postal'){ updatePostalDistance(); } });
+document.addEventListener('blur', (e)=>{ if(e.target && e.target.id==='biz_postal'){ updatePostalDistance(); } }, true);
+
+/* ---------- Init ---------- */
+populateQtySelect("DEMO");
+toggleStageAddons();
+populateTable("DEMO");
+autoPrice("DEMO", 10);
+$("#delivery").value = computeDelivery("DEMO", 10);
+buildPreview();
+drawMap(); // initial map
+</script>
+
+<!-- Auto-injected: DEMO-only footer note for PDF/print -->
+<div id="demoFooterNote" aria-hidden="true">
+  <span class="line">FREE DELIVERY</span>
+  <span class="line">CASH ON DELIVERY</span>
+</div>
+
+<script>
+/* --- DEMO footer note logic (auto-injected) --- */
+(function(){
+  function isDemoStage(){
+    try{
+      // Common ids/names used in prior versions: stageSelect, stage, Stage
+      var el = document.getElementById('stageSelect') || document.getElementById('stage') || document.querySelector('[name="stage"]');
+      if(!el) return false;
+      var val = (el.value || '').toString().trim().toUpperCase();
+      return val === 'DEMO';
+    }catch(e){ return false; }
+  }
+
+  // Ensure the footer lives near the quote/print area if present
+  function placeFooter(){
+    var footer = document.getElementById('demoFooterNote');
+    if(!footer) return;
+
+    // Try to attach to the quote/invoice area if it exists
+    var targets = [
+      document.getElementById('quotePreview'),
+      document.getElementById('invoicePreview'),
+      document.querySelector('.quote-preview'),
+      document.querySelector('.invoice-preview'),
+      document.querySelector('#quote, .quote, #invoice, .invoice')
+    ].filter(Boolean);
+
+    if(targets.length && footer.parentElement !== targets[0]){
+      targets[0].appendChild(footer);
+    }else if(!targets.length && footer.parentElement !== document.body){
+      document.body.appendChild(footer);
+    }
+  }
+
+  function updateFooter(){
+    placeFooter();
+    var footer = document.getElementById('demoFooterNote');
+    if(!footer) return;
+    if(isDemoStage()){
+      footer.style.display = 'block';
+      footer.setAttribute('aria-hidden','false');
+    }else{
+      footer.style.display = 'none';
+      footer.setAttribute('aria-hidden','true');
+    }
+  }
+
+  // Hook common change/calc events if present
+  function hook(){
+    var stageEl = document.getElementById('stageSelect') || document.getElementById('stage') || document.querySelector('[name="stage"]');
+    if(stageEl){
+      stageEl.addEventListener('change', updateFooter);
+    }
+    // Also observe Calculate buttons that might refresh the preview
+    Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"]')).forEach(function(btn){
+      var txt = (btn.textContent || btn.value || '').toLowerCase();
+      if(/calc|update|quote|preview|recalc|generate|pdf|print/.test(txt)){
+        btn.addEventListener('click', function(){ setTimeout(updateFooter, 50); });
+      }
+    });
+
+    // If a print button exists, update before printing
+    if(window.matchMedia){
+      var mql = window.matchMedia('print');
+      if(mql && mql.addListener){
+        mql.addListener(function(m){ if(m.matches) updateFooter(); });
+      }
+    }
+    window.addEventListener('beforeprint', updateFooter);
+  }
+
+  // Init
+  document.addEventListener('DOMContentLoaded', function(){
+    updateFooter();
+    hook();
+  });
+  // In case DOMContentLoaded already fired (injected late)
+  if(document.readyState === 'complete' || document.readyState === 'interactive'){
+    setTimeout(function(){ updateFooter(); hook(); }, 50);
+  }
+})();
+</script>
+<script>
+/* --- Stage-specific footer note logic (auto-injected v2) --- */
+(function(){
+  function getStageEl(){
+    return document.getElementById('stageSelect') || document.getElementById('stage') || document.querySelector('[name="stage"]');
+  }
+  function getStage(){
+    var el = getStageEl();
+    if(!el) return "";
+    return (el.value || "").toString().trim().toUpperCase();
+  }
+  function isDemo(){ return getStage() === "DEMO"; }
+  function isTesting(){ return getStage() === "TESTING"; }
+
+  function placeFooter(){
+    var footer = document.getElementById('demoFooterNote');
+    if(!footer) return;
+    var targets = [
+      document.getElementById('quotePreview'),
+      document.getElementById('invoicePreview'),
+      document.querySelector('.quote-preview'),
+      document.querySelector('.invoice-preview'),
+      document.querySelector('#quote, .quote, #invoice, .invoice')
+    ].filter(Boolean);
+    if(targets.length && footer.parentElement !== targets[0]){
+      targets[0].appendChild(footer);
+    }else if(!targets.length && footer.parentElement !== document.body){
+      document.body.appendChild(footer);
+    }
+  }
+
+  function setLines(lines){
+    var footer = document.getElementById('demoFooterNote');
+    if(!footer) return;
+    footer.innerHTML = "";
+    lines.forEach(function(txt){
+      var span = document.createElement('span');
+      span.className = 'line';
+      span.textContent = txt;
+      footer.appendChild(span);
+    });
+  }
+
+  function updateFooter(){
+    placeFooter();
+    var footer = document.getElementById('demoFooterNote');
+    if(!footer) return;
+
+    if(isDemo()){
+      setLines(["FREE DELIVERY", "CASH ON DELIVERY"]);
+      footer.style.display = "block";
+      footer.setAttribute("aria-hidden", "false");
+    }else if(isTesting()){
+      setLines(["FREE DELIVERY", "CASH ON DELIVERY or Interac e‑Transfer to pay@purpledrop.ca"]);
+      footer.style.display = "block";
+      footer.setAttribute("aria-hidden", "false");
+    }else{
+      footer.style.display = "none";
+      footer.setAttribute("aria-hidden", "true");
+    }
+  }
+
+  function hook(){
+    var stageEl = getStageEl();
+    if(stageEl){
+      stageEl.addEventListener('change', updateFooter);
+    }
+    Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"]')).forEach(function(btn){
+      var txt = (btn.textContent || btn.value || '').toLowerCase();
+      if(/calc|update|quote|preview|recalc|generate|pdf|print/.test(txt)){
+        btn.addEventListener('click', function(){ setTimeout(updateFooter, 50); });
+      }
+    });
+    if(window.matchMedia){
+      var mql = window.matchMedia('print');
+      if(mql && mql.addListener){
+        mql.addListener(function(m){ if(m.matches) updateFooter(); });
+      }
+    }
+    window.addEventListener('beforeprint', updateFooter);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    updateFooter();
+    hook();
+  });
+  if(document.readyState === 'complete' || document.readyState === 'interactive'){
+    setTimeout(function(){ updateFooter(); hook(); }, 50);
+  }
+})();
+</script>
+<script>
+/* --- Stage-specific footer note logic (auto-injected v3) --- */
+(function(){
+  function getStageEl(){
+    return document.getElementById('stageSelect') || document.getElementById('stage') || document.querySelector('[name="stage"]');
+  }
+  function getStage(){
+    var el = getStageEl();
+    if(!el) return "";
+    return (el.value || "").toString().trim().toUpperCase();
+  }
+  function isDemo(){ return getStage() === "DEMO"; }
+  function isTesting(){ return getStage() === "TESTING"; }
+
+  function placeFooter(){
+    var footer = document.getElementById('demoFooterNote');
+    if(!footer) return;
+    var targets = [
+      document.getElementById('quotePreview'),
+      document.getElementById('invoicePreview'),
+      document.querySelector('.quote-preview'),
+      document.querySelector('.invoice-preview'),
+      document.querySelector('#quote, .quote, #invoice, .invoice')
+    ].filter(Boolean);
+    if(targets.length && footer.parentElement !== targets[0]){
+      targets[0].appendChild(footer);
+    }else if(!targets.length && footer.parentElement !== document.body){
+      document.body.appendChild(footer);
+    }
+  }
+
+  function setLines(lines){
+    var footer = document.getElementById('demoFooterNote');
+    if(!footer) return;
+    footer.innerHTML = "";
+    lines.forEach(function(txt){
+      var span = document.createElement('span');
+      span.className = 'line';
+      span.textContent = txt;
+      footer.appendChild(span);
+    });
+  }
+
+  function updateFooter(){
+    placeFooter();
+    var footer = document.getElementById('demoFooterNote');
+    if(!footer) return;
+
+    if(isDemo()){
+      setLines(["FREE DELIVERY", "CASH ON DELIVERY"]);
+      footer.style.display = "block";
+      footer.setAttribute("aria-hidden", "false");
+    }else if(isTesting()){
+      setLines(["FREE DELIVERY", "CASH ON DELIVERY or Interac e-Transfer to pay@purpledrop.ca"]);
+      footer.style.display = "block";
+      footer.setAttribute("aria-hidden", "false");
+    }else{
+      footer.style.display = "none";
+      footer.setAttribute("aria-hidden", "true");
+    }
+  }
+
+  function hook(){
+    var stageEl = getStageEl();
+    if(stageEl){
+      stageEl.addEventListener('change', updateFooter);
+    }
+    // Recompute after typical actions
+    Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"]')).forEach(function(btn){
+      var txt = (btn.textContent || btn.value || '').toLowerCase();
+      if(/calc|update|quote|preview|recalc|generate|pdf|print/.test(txt)){
+        btn.addEventListener('click', function(){ setTimeout(updateFooter, 60); });
+      }
+    });
+    // Make sure the correct version is visible before printing
+    if(window.matchMedia){
+      var mql = window.matchMedia('print');
+      if(mql && mql.addListener){
+        mql.addListener(function(m){ if(m.matches) updateFooter(); });
+      }
+    }
+    window.addEventListener('beforeprint', updateFooter);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    updateFooter();
+    hook();
+  });
+  if(document.readyState === 'complete' || document.readyState === 'interactive'){
+    setTimeout(function(){ updateFooter(); hook(); }, 60);
+  }
+})();
+</script>
+<script>
+/* --- Stage-specific footer note logic (v4) --- */
+(function(){
+  function getStageEl(){
+    return document.getElementById('stageSelect') || document.getElementById('stage') || document.querySelector('[name="stage"]');
+  }
+  function getStage(){
+    var el = getStageEl();
+    if(!el) return "";
+    return (el.value || "").toString().trim().toUpperCase();
+  }
+  function isDemo(){ return getStage() === "DEMO"; }
+  function isTesting(){ return getStage() === "TESTING"; }
+
+  function placeFooter(){
+    var footer = document.getElementById('demoFooterNote');
+    if(!footer) return;
+    var targets = [
+      document.getElementById('quotePreview'),
+      document.getElementById('invoicePreview'),
+      document.querySelector('.quote-preview'),
+      document.querySelector('.invoice-preview'),
+      document.querySelector('#quote, .quote, #invoice, .invoice')
+    ].filter(Boolean);
+    if(targets.length && footer.parentElement !== targets[0]){
+      targets[0].appendChild(footer);
+    }else if(!targets.length && footer.parentElement !== document.body){
+      document.body.appendChild(footer);
+    }
+  }
+
+  function setLines(lines){
+    var footer = document.getElementById('demoFooterNote');
+    if(!footer) return;
+    footer.innerHTML = "";
+    lines.forEach(function(txt){
+      var span = document.createElement('span');
+      span.className = 'line';
+      span.textContent = txt;
+      footer.appendChild(span);
+    });
+  }
+
+  function updateFooter(){
+    placeFooter();
+    var footer = document.getElementById('demoFooterNote');
+    if(!footer) return;
+
+    if(isDemo()){
+      setLines(["FREE DELIVERY", "CASH ON DELIVERY"]);
+      footer.style.display = "block";
+      footer.setAttribute("aria-hidden", "false");
+    }else if(isTesting()){
+      setLines(["FREE DELIVERY", "CASH ON DELIVERY or Interac e-Transfer to pay@purpledrop.ca"]);
+      footer.style.display = "block";
+      footer.setAttribute("aria-hidden", "false");
+    }else{
+      footer.style.display = "none";
+      footer.setAttribute("aria-hidden", "true");
+    }
+  }
+
+  function hook(){
+    var stageEl = getStageEl();
+    if(stageEl){
+      stageEl.addEventListener('change', updateFooter);
+    }
+    // Recompute after typical actions
+    Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"]')).forEach(function(btn){
+      var txt = (btn.textContent || btn.value || '').toLowerCase();
+      if(/calc|update|quote|preview|recalc|generate|pdf|print/.test(txt)){
+        btn.addEventListener('click', function(){ setTimeout(updateFooter, 80); });
+      }
+    });
+
+    // Force update immediately before the print dialog and just after it opens
+    function ensureFooterForPrint(){
+      updateFooter();
+      setTimeout(updateFooter, 50);
+      setTimeout(updateFooter, 120);
+    }
+    if(window.matchMedia){
+      var mql = window.matchMedia('print');
+      if(mql && mql.addListener){
+        mql.addListener(function(m){ if(m.matches) ensureFooterForPrint(); });
+      }
+    }
+    window.addEventListener('beforeprint', ensureFooterForPrint);
+  }
+
+  // Kick it off
+  document.addEventListener('DOMContentLoaded', function(){
+    updateFooter();
+    hook();
+    // extra safety: refresh once more shortly after load
+    setTimeout(updateFooter, 150);
+  });
+  if(document.readyState === 'complete' || document.readyState === 'interactive'){
+    setTimeout(function(){ updateFooter(); hook(); }, 80);
+  }
+})();
+</script>
+<script>
+/* --- Stage-specific footer note logic (v5 with FIRST ORDER) --- */
+(function(){
+  function getStageEl(){
+    return document.getElementById('stageSelect') || document.getElementById('stage') || document.querySelector('[name="stage"]');
+  }
+  function getStageRaw(){
+    var el = getStageEl();
+    if(!el) return "";
+    return (el.value || "").toString();
+  }
+  function getStage(){
+    return getStageRaw().trim().toUpperCase();
+  }
+  function norm(s){
+    return (s||"").toString().trim().toUpperCase().replace(/\s+/g," ");
+  }
+  function isDemo(){ return norm(getStage()) === "DEMO"; }
+  function isTesting(){ return norm(getStage()) === "TESTING"; }
+  function isFirstOrder(){
+    var s = norm(getStage());
+    return s === "FIRST ORDER" || s === "FIRST-ORDER" || s === "FIRSTORDER";
+  }
+
+  function placeFooter(){
+    var footer = document.getElementById('demoFooterNote');
+    if(!footer) return;
+    var targets = [
+      document.getElementById('quotePreview'),
+      document.getElementById('invoicePreview'),
+      document.querySelector('.quote-preview'),
+      document.querySelector('.invoice-preview'),
+      document.querySelector('#quote, .quote, #invoice, .invoice')
+    ].filter(Boolean);
+    if(targets.length && footer.parentElement !== targets[0]){
+      targets[0].appendChild(footer);
+    }else if(!targets.length && footer.parentElement !== document.body){
+      document.body.appendChild(footer);
+    }
+  }
+
+  function setLines(lines){
+    var footer = document.getElementById('demoFooterNote');
+    if(!footer) return;
+    footer.innerHTML = "";
+    lines.forEach(function(txt){
+      var span = document.createElement('span');
+      span.className = 'line';
+      span.textContent = txt;
+      footer.appendChild(span);
+    });
+  }
+
+  function updateFooter(){
+    placeFooter();
+    var footer = document.getElementById('demoFooterNote');
+    if(!footer) return;
+
+    if(isDemo()){
+      setLines(["FREE DELIVERY", "CASH ON DELIVERY"]);
+      footer.style.display = "block";
+      footer.setAttribute("aria-hidden", "false");
+    }else if(isTesting()){
+      setLines(["FREE DELIVERY", "CASH ON DELIVERY or Interac e-Transfer to pay@purpledrop.ca"]);
+      footer.style.display = "block";
+      footer.setAttribute("aria-hidden", "false");
+    }else if(isFirstOrder()){
+      setLines(["CASH ON DELIVERY or Interac e-Transfer to pay@purpledrop.ca",
+                "Credit cards, Apple Pay, Google Pay, Samsung Pay"]);
+      footer.style.display = "block";
+      footer.setAttribute("aria-hidden", "false");
+    }else{
+      footer.style.display = "none";
+      footer.setAttribute("aria-hidden", "true");
+    }
+  }
+
+  function hook(){
+    var stageEl = getStageEl();
+    if(stageEl){
+      stageEl.addEventListener('change', updateFooter);
+    }
+    Array.from(document.querySelectorAll('button, input[type=\"button\"], input[type=\"submit\"]')).forEach(function(btn){
+      var txt = (btn.textContent || btn.value || '').toLowerCase();
+      if(/calc|update|quote|preview|recalc|generate|pdf|print/.test(txt)){
+        btn.addEventListener('click', function(){ setTimeout(updateFooter, 90); });
+      }
+    });
+    function ensureFooterForPrint(){
+      updateFooter();
+      setTimeout(updateFooter, 60);
+      setTimeout(updateFooter, 140);
+    }
+    if(window.matchMedia){
+      var mql = window.matchMedia('print');
+      if(mql && mql.addListener){
+        mql.addListener(function(m){ if(m.matches) ensureFooterForPrint(); });
+      }
+    }
+    window.addEventListener('beforeprint', ensureFooterForPrint);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    updateFooter();
+    hook();
+    setTimeout(updateFooter, 160);
+  });
+  if(document.readyState === 'complete' || document.readyState === 'interactive'){
+    setTimeout(function(){ updateFooter(); hook(); }, 90);
+  }
+})();
+</script>
+<script>
+/* --- Stage-specific footer note logic (v6) --- */
+(function(){
+  function getStageEl(){
+    return document.getElementById('stageSelect') || document.getElementById('stage') || document.querySelector('[name="stage"]');
+  }
+  function getStageRaw(){
+    var el = getStageEl();
+    if(!el) return "";
+    return (el.value || "").toString();
+  }
+  function norm(s){
+    return (s||"").toString().trim().toUpperCase().replace(/\s+/g," ");
+  }
+  function getStage(){ return norm(getStageRaw()); }
+  function isDemo(){ return getStage() === "DEMO"; }
+  function isTesting(){ return getStage() === "TESTING"; }
+  function isFirstOrder(){
+    var s = getStage();
+    // Robust containment: any label that includes FIRST and ORDER (e.g., "FIRST ORDER", "FIRST-ORDER", "First Order Stage")
+    return s.includes("FIRST") && s.includes("ORDER");
+  }
+
+  function placeFooter(){
+    var footer = document.getElementById('demoFooterNote');
+    if(!footer) return;
+    var targets = [
+      document.getElementById('quotePreview'),
+      document.getElementById('invoicePreview'),
+      document.querySelector('.quote-preview'),
+      document.querySelector('.invoice-preview'),
+      document.querySelector('#quote, .quote, #invoice, .invoice')
+    ].filter(Boolean);
+    if(targets.length && footer.parentElement !== targets[0]){
+      targets[0].appendChild(footer);
+    }else if(!targets.length && footer.parentElement !== document.body){
+      document.body.appendChild(footer);
+    }
+  }
+
+  function setLines(lines){
+    var footer = document.getElementById('demoFooterNote');
+    if(!footer) return;
+    footer.innerHTML = "";
+    lines.forEach(function(txt){
+      var span = document.createElement('span');
+      span.className = 'line';
+      span.textContent = txt;
+      footer.appendChild(span);
+    });
+  }
+
+  function updateFooter(){
+    placeFooter();
+    var footer = document.getElementById('demoFooterNote');
+    if(!footer) return;
+
+    if(isDemo()){
+      setLines(["FREE DELIVERY", "CASH ON DELIVERY"]);
+      footer.style.display = "block";
+      footer.setAttribute("aria-hidden", "false");
+    }else if(isTesting()){
+      setLines(["FREE DELIVERY", "CASH ON DELIVERY or Interac e-Transfer to pay@purpledrop.ca"]);
+      footer.style.display = "block";
+      footer.setAttribute("aria-hidden", "false");
+    }else if(isFirstOrder()){
+      setLines([
+        "CASH ON DELIVERY or Interac e-Transfer to pay@purpledrop.ca",
+        "Credit cards, Apple Pay, Google Pay, Samsung Pay",
+        "Delivery fees apply."
+      ]);
+      footer.style.display = "block";
+      footer.setAttribute("aria-hidden", "false");
+    }else{
+      footer.style.display = "none";
+      footer.setAttribute("aria-hidden", "true");
+    }
+  }
+
+  function hook(){
+    var stageEl = getStageEl();
+    if(stageEl){
+      stageEl.addEventListener('change', updateFooter);
+    }
+    // Recompute after typical actions
+    Array.from(document.querySelectorAll('button, input[type=\"button\"], input[type=\"submit\"]')).forEach(function(btn){
+      var txt = (btn.textContent || btn.value || '').toLowerCase();
+      if(/calc|update|quote|preview|recalc|generate|pdf|print/.test(txt)){
+        btn.addEventListener('click', function(){ setTimeout(updateFooter, 90); });
+      }
+    });
+    // Watch for dynamic changes in the quote/preview containers
+    var obsTargets = [
+      document.getElementById('quotePreview'),
+      document.getElementById('invoicePreview')
+    ].filter(Boolean);
+    obsTargets.forEach(function(tgt){
+      try{
+        var mo = new MutationObserver(function(){ setTimeout(updateFooter, 40); });
+        mo.observe(tgt, {childList:true, subtree:true, characterData:true});
+      }catch(e){}
+    });
+
+    function ensureFooterForPrint(){
+      updateFooter();
+      setTimeout(updateFooter, 60);
+      setTimeout(updateFooter, 140);
+    }
+    if(window.matchMedia){
+      var mql = window.matchMedia('print');
+      if(mql && mql.addListener){
+        mql.addListener(function(m){ if(m.matches) ensureFooterForPrint(); });
+      }
+    }
+    window.addEventListener('beforeprint', ensureFooterForPrint);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    updateFooter();
+    hook();
+    setTimeout(updateFooter, 160);
+  });
+  if(document.readyState === 'complete' || document.readyState === 'interactive'){
+    setTimeout(function(){ updateFooter(); hook(); }, 90);
+  }
+})();
+</script>
+
+<!-- Leaflet + Google Geocoding -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAO6KbH-OsQ1JeuH6mjRiKc4cWsx80srHs&libraries=geocoding" async defer></script>
+<script src="js/service-map-footer.js"></script>
+</body>
+</html>
